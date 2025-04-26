@@ -1,0 +1,11 @@
+fastapi
+groq
+langchain
+langchain-community
+langchain-core
+langchain-groq
+langchain-huggingface
+langchain-text-splitters
+PyMuPDF
+python-dotenv
+uuid
