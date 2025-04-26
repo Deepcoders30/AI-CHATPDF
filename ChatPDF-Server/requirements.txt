@@ -1,4 +1,5 @@
 fastapi
+"fastapi[standard]"
 groq
 langchain
 langchain-community
@@ -9,3 +10,4 @@ langchain-text-splitters
 PyMuPDF
 python-dotenv
 uuid
+faiss-cpu

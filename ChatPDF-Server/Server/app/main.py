@@ -10,6 +10,8 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from dotenv import load_dotenv
 import uuid
 import fitz
+import os
+from pathlib import Path
 
 # Initialize app
 app = FastAPI()
@@ -26,9 +28,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+UPLOAD_DIR = "uploads"
+os.makedirs(UPLOAD_DIR, exist_ok=True)  
+
 # In-memory storage
 docs_record = {}
 chat_history_db = {}
+
+def saving_file_to_local_storage(file: UploadFile, filename: str) -> str:
+    file_path = os.path.join(UPLOAD_DIR, filename)
+    with open(file_path, "wb") as f:
+        f.write(file.file.read())
+    return file_path
 
 
 def extracting_from_pdf(pdf_bytes):
@@ -54,10 +65,17 @@ def initializing_LLM_Groq():
 # API Endpoints
 @app.post("/upload")
 async def upload(pdfFile: UploadFile = File(...)):
+    # Save file to disk
+    file_ext = Path(pdfFile.filename).suffix
+    filename = f"{file_ext}"
+    file_path = saving_file_to_local_storage(pdfFile, filename)
+    
+    # Process the file content
     pdf_in_bytes = await pdfFile.read()
     all_text = extracting_from_pdf(pdf_in_bytes)
     vector_store = create_vectorstore(all_text)
     
+    # Create a unique document ID
     doc_id = str(uuid.uuid4())
     docs_record[doc_id] = vector_store
 
@@ -69,13 +87,16 @@ async def upload(pdfFile: UploadFile = File(...)):
 
 @app.post("/ask")
 async def askQuestion(request: Request):
+    # Parse JSON payload from request
     data = await request.json()
     doc_id = data["doc_id"]
     question_input = data["question"]
-
+    
+    # Initialize Groq LLM 
     llm = initializing_LLM_Groq()
     retriever = docs_record[doc_id].as_retriever()
-
+    
+     # System prompt to reformulate questions based on chat history
     condense_question_system_template = (
         "Given a chat history and the latest user question "
         "which might reference context in the chat history, "
@@ -84,6 +105,7 @@ async def askQuestion(request: Request):
         "just reformulate it if needed and otherwise return it as is."
     )
     
+    # Creating Prompt Template
     condense_question_prompt = ChatPromptTemplate.from_messages(
         [
             ("system", condense_question_system_template),
@@ -91,11 +113,13 @@ async def askQuestion(request: Request):
             ("human", "{input}"),
         ]
     )
-
+    
+    # Create chain that understands conversation
     history_aware_retriever = create_history_aware_retriever(
         llm, retriever, condense_question_prompt
     )
-
+    
+    # System instructions
     system_prompt = (
         "You are an expert PDF document assistant specialized in analyzing and answering questions about uploaded documents. "
         "Always follow these rules:\n"
@@ -106,7 +130,8 @@ async def askQuestion(request: Request):
         "5. For document-wide questions (like summaries), provide comprehensive but brief overviews\n\n"
         "{context}"
     )
-
+    
+    # Creating prompt template for answering of questions
     qa_prompt = ChatPromptTemplate.from_messages(
         [
             ("system", system_prompt),
@@ -114,22 +139,28 @@ async def askQuestion(request: Request):
             ("human", "{input}"),
         ]
     )
-
+    
+    # Creating chain to generates answers from PDF document
     QA_chain = create_stuff_documents_chain(llm, qa_prompt)
     conversation_QA_chain = create_retrieval_chain(history_aware_retriever, QA_chain)
-
+     
     history = chat_history_db.get(doc_id, [])
+
+    #Converting history to Langchain's Format
     langchain_history = []
     for human, ai in history:
         langchain_history.append(("human", human))
         langchain_history.append(("ai", ai))
-
+    
+    #Execute full QA pipeline
     result = conversation_QA_chain.invoke({
         "input": question_input,
         "chat_history": langchain_history,
     })
-
+    
+    #Updating Conversations
     history.append((question_input, result["answer"]))
     chat_history_db[doc_id] = history
-
+    
+    #returning answer to UI
     return {"answer": result["answer"]}
