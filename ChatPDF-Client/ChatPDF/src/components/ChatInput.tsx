@@ -24,7 +24,7 @@ const ChatInput = ({
     setText("");
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/ask", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ask`, {
         method: "POST",
         body: JSON.stringify({
           doc_id: doc_id,

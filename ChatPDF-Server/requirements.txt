@@ -1,5 +1,6 @@
 fastapi
-"fastapi[standard]"
+uvicorn
+fastapi[standard]
 groq
 langchain
 langchain-community
@@ -11,3 +12,4 @@ PyMuPDF
 python-dotenv
 uuid
 faiss-cpu
+python-multipart

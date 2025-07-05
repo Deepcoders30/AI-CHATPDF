@@ -22,7 +22,7 @@ load_dotenv()
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["CLIENT_URL"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -34,13 +34,6 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 # In-memory storage
 docs_record = {}
 chat_history_db = {}
-
-def saving_file_to_local_storage(file: UploadFile, filename: str) -> str:
-    file_path = os.path.join(UPLOAD_DIR, filename)
-    with open(file_path, "wb") as f:
-        f.write(file.file.read())
-    return file_path
-
 
 def extracting_from_pdf(pdf_bytes):
     doc = fitz.open(stream=pdf_bytes, filetype="pdf")
@@ -64,12 +57,7 @@ def initializing_LLM_Groq():
 
 # API Endpoints
 @app.post("/upload")
-async def upload(pdfFile: UploadFile = File(...)):
-    # Save file to disk
-    file_ext = Path(pdfFile.filename).suffix
-    filename = f"{file_ext}"
-    file_path = saving_file_to_local_storage(pdfFile, filename)
-    
+async def upload(pdfFile: UploadFile = File(...)):    
     # Process the file content
     pdf_in_bytes = await pdfFile.read()
     all_text = extracting_from_pdf(pdf_in_bytes)
@@ -128,6 +116,7 @@ async def askQuestion(request: Request):
         "3. Keep answers concise (2-3 sentences maximum) but informative\n"
         "4. When relevant, include page numbers or section references from the document\n"
         "5. For document-wide questions (like summaries), provide comprehensive but brief overviews\n\n"
+        "6. If someone ask who made this project, answer them it is created by Mohd Umair"
         "{context}"
     )
     
