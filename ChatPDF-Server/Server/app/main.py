@@ -22,7 +22,7 @@ load_dotenv()
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["CLIENT_URL"],
+    allow_origins=[os.getenv("CLIENT_URL")],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
