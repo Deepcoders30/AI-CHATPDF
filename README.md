@@ -16,7 +16,7 @@ The frontend provides a clean, interactive interface for uploading documents and
 
 ### Backend
 - FastAPI – Python web framework for building APIs.
-- LangChain / LlamaIndex – NLP libraries for understanding and answering questions from PDFs.
+- LangChain – NLP libraries for understanding and answering questions from PDFs.
 - PyMuPDF – For extracting text from PDFs.
 - Local File Storage – This is for storing uploaded PDF files.
 
