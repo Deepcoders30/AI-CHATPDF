@@ -24,7 +24,7 @@ const ChatInput = ({
     setText("");
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/ask`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/ask`, {
         method: "POST",
         body: JSON.stringify({
           doc_id: doc_id,
