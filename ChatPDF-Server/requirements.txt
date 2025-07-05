@@ -13,3 +13,4 @@ python-dotenv
 uuid
 faiss-cpu
 python-multipart
+sentence-transformers
