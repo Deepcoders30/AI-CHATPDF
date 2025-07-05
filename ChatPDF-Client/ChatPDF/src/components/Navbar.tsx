@@ -26,7 +26,7 @@ const Navbar = ({ getDocId }: NavbarProps) => {
       const formData = new FormData();
       formData.append("pdfFile", file);
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/upload`, {
+      const response = await fetch(`${process.env.SERVER_URL}/upload`, {
         method: "POST",
         body: formData,
       });
